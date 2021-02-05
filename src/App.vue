@@ -4,25 +4,25 @@
       <router-link to="/">Table</router-link> |
       <router-link to="/symbols">Symbols</router-link>
     </div>
-    <router-view class="container" />
-    <div>{{ data.numba }} {{ data.gumba }}</div>
+    <router-view class="app__container" />
   </div>
 </template>
 
 <script>
-import mainStore from './store/mainStore';
-
 export default {
   name: 'App',
   data() {
     return {
-      data: mainStore,
     };
   },
 };
 </script>
 
 <style lang="scss">
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
 #app {
   font-family: Avenir, Helvetica, Arial, sans-serif;
   -webkit-font-smoothing: antialiased;
@@ -43,8 +43,8 @@ export default {
   }
 }
 
-.container {
-  max-width: 60%;
+.app__container {
+  max-width: 80%;
   margin: 0 auto;
 }
 </style>

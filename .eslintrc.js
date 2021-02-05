@@ -20,7 +20,6 @@ module.exports = {
     'no-console': 'off',
     'no-debugger': 'off',
     'vue/singleline-html-element-content-newline': 'off',
-    'vue/multiline-html-element-content-newline': 'off',
   },
 
   'extends': [
