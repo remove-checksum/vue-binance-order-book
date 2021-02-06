@@ -8,6 +8,9 @@ const storeMutations = {
   setData(value) {
     store.data = value;
   },
+  getData() {
+    return store.data;
+  },
 };
 
 export { store, storeMutations };

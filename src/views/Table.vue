@@ -49,7 +49,7 @@ export default {
   computed: {
   },
   mounted() {
-    this.handleSnapshot();
+
   },
   methods: {
     handleSnapshot() {
@@ -59,6 +59,13 @@ export default {
         this.orderBook.asks = this.$store.data.asks;
       });
     },
+
+    handleSubscribe() {
+      helpCore.plugin.BinanceSDK.subscribeToOrderBook('bnbbtc', '1000');
+      // make subscribeToOrderBook return something then set this data to storage
+      this.$mutations.setData();
+    },
+
     capitalize([firstLetter, ...rest]) {
       return firstLetter.toUpperCase() + rest.join('').toLowerCase;
     },
@@ -73,10 +80,6 @@ export default {
     @media only screen and (max-width: 720px) {
       flex-direction: column;
     }
-}
-
-.table {
-
 }
 
 // .table {

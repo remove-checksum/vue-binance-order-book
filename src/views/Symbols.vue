@@ -5,7 +5,9 @@
       <option
         value="BTCUSDT"
         selected
-      >BTCUSDT</option>
+      >
+        BTCUSDT
+      </option>
       <option value="BNBBTC">BNBBTC</option>
       <option value="ETHBTC">ETHBTC</option>
     </select>
@@ -19,7 +21,6 @@ export default {
   components: {
   },
   methods: {
-
   },
 };
 </script>

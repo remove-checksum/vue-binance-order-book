@@ -15,12 +15,16 @@ import axios from 'axios';
  * @returns {Promise} - Promise with response object
  */
 
-function fetchSnapshot(symbol = 'BTCUSDT', limit = 500) {
+function fetchSnapshot(symbol = 'BNBBTC', limit = 500) {
   // const { str: symbolSanitized, num: limitSanitized } = prepareParams(symbol, limit);
   const query = `https://api.binance.com/api/v3/depth?symbol=${symbol.toUpperCase()}&limit=${Number(limit)}`;
 
   return axios.get(query);
 }
+
+// function handleMessages(messages) {
+//   console.log(messages);
+// }
 
 /**
  * Enum updateRate vaules
@@ -31,13 +35,17 @@ const possibleUpdateRates = {
   '100ms': '100',
 };
 
+function handleMessage(events, snapshot) {
+  console.log('snapshot: ', snapshot, '\nevents: ', events);
+}
+
 /**
  * Subscribe to order book, updates every 1000ms by default
  * @param {string} symbol - Symbol for which to subscribe
  * @param {string} [updateRate] - Set update rate
  */
 
-async function subscribeToOrderBook(symbol = 'bnbbtc', updateRate = possibleUpdateRates['1000ms']) {
+function subscribeToOrderBook(symbol = 'bnbbtc', updateRate = possibleUpdateRates['1000ms']) {
   let query = `wss://stream.binance.com:9443/ws/${symbol.toLowerCase()}@depth`;
   if (updateRate === '100') {
     query += '@100ms';
@@ -45,34 +53,37 @@ async function subscribeToOrderBook(symbol = 'bnbbtc', updateRate = possibleUpda
 
   const ws = new WebSocket(query);
 
-  ws.onopen = async () => {
-    let snapshotCache;
-    await fetchSnapshot(symbol, 1000).then((res) => {
-      snapshotCache = res.data;
-    });
-    console.log(`[open] connected to ${query}`);
-    console.log(snapshotCache.lastUpdateId);
-  };
-
   const eventBuffer = [];
+  let snapshotBuffer;
 
-  ws.onmessage = (evt) => {
-    // eventBuffer.push(evt.data);
-    // eslint-disable-next-line dot-notation
-    const buffer = JSON.parse(evt.data);
-    console.log('First updateId: ', buffer.U, '\nLast updateId: ', buffer.u);
+  ws.onopen = async () => {
+    console.log(`[open]: ${query}`);
+    await fetchSnapshot('BNBBTC', 500).then((res) => { snapshotBuffer = res.data; });
   };
-  // eventBuffer.filter((payload) => !(payload.u <= snapshotCache.lastUpdateId));
 
-  // eventBuffer.filter(())
+  // ws.onmessage = (evt) => {
+  //   const buffer = JSON.parse(evt.data);
+  //   console.log(`Message recieved\nFirst updateId: ${buffer.U}\nLast updateId: ${buffer.u}`);
+  //   eventBuffer.push(buffer);
+  //   handleMessage(eventBuffer, snapshotBuffer);
+  // };
+
+  ws.onmessage = (evt) => new Promise((resolve) => {
+    const buffer = JSON.parse(evt.data);
+    console.log(`Message recieved\nFirst updateId: ${buffer.U}\nLast updateId: ${buffer.u}`);
+    eventBuffer.push(buffer);
+    resolve({ eventBuffer, snapshotBuffer });
+  }).then((result) => handleMessage(result.eventBuffer, result.snapshotBuffer));
+
+  ws.onerror = (err) => {
+    console.log(err);
+    ws.close();
+  };
 
   setTimeout(() => {
-    console.log('first recieved message', eventBuffer[0]);
     ws.close(1000);
     console.log('connection closed');
-  }, 5000);
-
-  return ws;
+  }, 10000);
 }
 
 export default {
