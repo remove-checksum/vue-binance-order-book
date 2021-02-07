@@ -1,71 +1,55 @@
 <template>
-  <div>
-    <div class="table__container">
-      <div
+  <div class="table-wrapper">
+    <!-- <div
         v-for="(orderBookValue, orderBookName, orderBookIndex) in orderBook"
         :key="orderBookIndex"
-      >
-        <table
-          class="table"
+      > -->
+    <table
+      class="table"
+    >
+      <caption>Bids: {{ orderBookAmountBids }}</caption>
+      <thead>
+        <tr class="table__row table__head">
+          <th class="table__header">Amount</th>
+          <th class="table__header">Price</th>
+          <th class="table__header">Total</th>
+        </tr>
+      </thead>
+      <tbody class="table__body">
+        <tr
+          v-for="(quantity, priceLevel) in orderBook.bids"
+          :key="priceLevel"
+          class="table__row"
         >
-          <caption>{{ orderBookName.toUpperCase() }}</caption>
-          <thead class="table__head">
-            <tr>
-              <th>Amount</th>
-              <th>Price</th>
-              <th>Total</th>
-            </tr>
-          </thead>
-          <tbody class="table__body">
-            <tr
-              v-for="(action, index) in orderBookValue"
-              :key="index"
-            >
-              <td>{{ action[0] }}</td>
-              <td>{{ action[1] }}</td>
-              <td>{{ (action[0] * action[1]).toFixed(8) }}</td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-    </div>
+          <td class="table__cell">{{ quantity }}</td>
+          <td class="table__cell">{{ priceLevel }}</td>
+          <td class="table__cell">{{ (quantity * Number(priceLevel)).toFixed(8) }}</td>
+        </tr>
+      </tbody>
+    </table>
   </div>
+  <!-- </div> -->
 </template>
 
 <script>
+import { mutations } from '../store/store';
 
 export default {
   name: 'Table',
   components: {
   },
-  data() {
-    return {
-      orderBook: {
-        bids: null,
-        asks: null,
-      },
-    };
-  },
   computed: {
+    orderBook() {
+      return mutations.getData();
+    },
+    orderBookAmountBids() {
+      return mutations.getAmountBids();
+    },
   },
   mounted() {
-
+    helpCore.plugin.BinanceSDK.subscribeToOrderBook('bnbbtc', '1000');
   },
   methods: {
-    handleSnapshot() {
-      helpCore.plugin.BinanceSDK.fetchSnapshot('ETHBTC', 100).then((res) => {
-        this.$store.data = res.data;
-        this.orderBook.bids = this.$store.data.bids;
-        this.orderBook.asks = this.$store.data.asks;
-      });
-    },
-
-    handleSubscribe() {
-      helpCore.plugin.BinanceSDK.subscribeToOrderBook('bnbbtc', '1000');
-      // make subscribeToOrderBook return something then set this data to storage
-      this.$mutations.setData();
-    },
-
     capitalize([firstLetter, ...rest]) {
       return firstLetter.toUpperCase() + rest.join('').toLowerCase;
     },
@@ -74,12 +58,38 @@ export default {
 </script>
 
 <style lang="scss">
-.table__container {
-  display: flex;
-  flex-direction: row;
-    @media only screen and (max-width: 720px) {
-      flex-direction: column;
+
+.table-wrapper {
+  width: 660px;
+  overflow-y: scroll;
+  max-height: 660px;
+}
+
+.table {
+  border-collapse: collapse;
+  text-align: left;
+  width: 100%;
+
+  &__row {
+    border-bottom: 1px solid black;
+    &:nth-child(even) {
+      background-color: lightpink;
     }
+  }
+
+  &__head {
+  }
+
+  &__body {
+  }
+
+  &__header {
+    padding: .5em;
+  }
+
+  &__cell {
+    padding: .5em
+  }
 }
 
 // .table {

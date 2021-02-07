@@ -1,12 +1,8 @@
+/* eslint-disable no-param-reassign */
+/* eslint-disable no-restricted-syntax */
 // TODO: Remake in ts
 import axios from 'axios';
-
-// function prepareParams(toStr, toNum) {
-//   return {
-//     str: toStr.toString().toUpperCase(),
-//     num: Number(toNum),
-//   };
-// }
+import { mutations } from '../store/store';
 
 /**
  * Fetch order book snapshot
@@ -22,21 +18,70 @@ function fetchSnapshot(symbol = 'BNBBTC', limit = 500) {
   return axios.get(query);
 }
 
-// function handleMessages(messages) {
-//   console.log(messages);
-// }
-
 /**
  * Enum updateRate vaules
  * @enum {string}
  */
+
 const possibleUpdateRates = {
   '1000ms': '1000',
   '100ms': '100',
 };
 
-function handleMessage(events, snapshot) {
-  console.log('snapshot: ', snapshot, '\nevents: ', events);
+/**
+ *
+ * @param {Object} snapshot
+ * @param {Array} snapshot.bids
+ * @param {Array} snapshot.asks
+ */
+
+function transformSnapshot(snapshot) {
+  const { bids, asks } = snapshot;
+  const transformed = {
+    bids: {},
+    asks: {},
+  };
+  for (const bid of bids) {
+    const [priceLevel, quantity] = bid;
+    transformed.bids[priceLevel] = quantity;
+  }
+  for (const ask of asks) {
+    const [priceLevel, quantity] = ask;
+    transformed.asks[priceLevel] = quantity;
+  }
+  return transformed;
+}
+
+/**
+ *
+ * @param {Object} diff
+ * @param {Array} diff.b
+ * @param {Array} diff.a
+ */
+
+function transformDiff(diff) {
+  const { b: bids, a: asks } = diff;
+  const transformed = {
+    bids: {},
+    asks: {},
+  };
+  for (const bid of bids) {
+    const [priceLevel, quantity] = bid;
+    transformed.bids[priceLevel] = quantity;
+  }
+  for (const ask of asks) {
+    const [priceLevel, quantity] = ask;
+    transformed.asks[priceLevel] = quantity;
+  }
+  return transformed;
+}
+
+function snapshotHandler(snapshot) {
+  mutations.setData(transformSnapshot(snapshot));
+}
+
+function messageHandler(message) {
+  mutations.patchData(transformDiff(message));
 }
 
 /**
@@ -54,26 +99,27 @@ function subscribeToOrderBook(symbol = 'bnbbtc', updateRate = possibleUpdateRate
   const ws = new WebSocket(query);
 
   const eventBuffer = [];
-  let snapshotBuffer;
+  let snapshot;
+  let gotSnapshot = false;
 
-  ws.onopen = async () => {
+  ws.onopen = () => {
     console.log(`[open]: ${query}`);
-    await fetchSnapshot('BNBBTC', 500).then((res) => { snapshotBuffer = res.data; });
+    fetchSnapshot('BNBBTC', 500).then((res) => {
+      snapshot = res.data;
+      gotSnapshot = !gotSnapshot;
+      snapshotHandler(snapshot);
+    });
   };
 
-  // ws.onmessage = (evt) => {
-  //   const buffer = JSON.parse(evt.data);
-  //   console.log(`Message recieved\nFirst updateId: ${buffer.U}\nLast updateId: ${buffer.u}`);
-  //   eventBuffer.push(buffer);
-  //   handleMessage(eventBuffer, snapshotBuffer);
-  // };
-
-  ws.onmessage = (evt) => new Promise((resolve) => {
+  ws.onmessage = (evt) => {
     const buffer = JSON.parse(evt.data);
-    console.log(`Message recieved\nFirst updateId: ${buffer.U}\nLast updateId: ${buffer.u}`);
-    eventBuffer.push(buffer);
-    resolve({ eventBuffer, snapshotBuffer });
-  }).then((result) => handleMessage(result.eventBuffer, result.snapshotBuffer));
+    console.log('Message recieved'); // \nFirst updateId: ${buffer.U}\nLast updateId: ${buffer.u}\n`, buffer);
+    if (!gotSnapshot) {
+      eventBuffer.push(buffer);
+    } else {
+      messageHandler(buffer);
+    }
+  };
 
   ws.onerror = (err) => {
     console.log(err);
@@ -83,7 +129,7 @@ function subscribeToOrderBook(symbol = 'bnbbtc', updateRate = possibleUpdateRate
   setTimeout(() => {
     ws.close(1000);
     console.log('connection closed');
-  }, 10000);
+  }, 15000);
 }
 
 export default {

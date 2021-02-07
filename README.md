@@ -1,4 +1,4 @@
-# koshelek.ru-test
+# vue-binance-order-book
 
 ## Project setup
 
